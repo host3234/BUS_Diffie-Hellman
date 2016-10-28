@@ -1,9 +1,11 @@
 package server;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.security.SecureRandom;
 import java.util.*;
@@ -13,6 +15,8 @@ public class Server {
     SecureRandom secRandGenerator = new SecureRandom();
     private DatagramSocket socket;
     private boolean running = false;
+    private Map<Client, BigInteger> clients = new HashMap<>();
+
 
     public Server(int port) {
         numP = BigInteger.probablePrime(32, secRandGenerator);
@@ -78,7 +82,33 @@ public class Server {
         }, "Receive");
         receiver.start();
     }
-
-
-
+    
+    private void send(final byte[] data, final InetAddress address, final int port) {
+        Thread sender = new Thread(() -> {
+            DatagramPacket packet = new DatagramPacket(data, data.length, address, port);
+            try {
+                socket.send(packet);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }, "Send");
+        sender.start();
+    }
+    
+    private void processData(DatagramPacket packet) {
+        String extraInfo = null;
+        try {
+            extraInfo = new String(packet.getData(), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        if (extraInfo.startsWith("\\hello")) {
+            String clientName = extraInfo.split(" ")[1].trim();
+            Client newClient = new Client(clientName.trim(), packet.getAddress(), packet.getPort());
+            if (findClient(clientName) != null) {
+                String response = "\\wrong"; //TODO -- if name is already used
+            } else {
+                clients.put(newClient, null);
+            }
+          }
 }

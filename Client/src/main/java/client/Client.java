@@ -34,7 +34,8 @@ public class Client {
             e.printStackTrace();
             return false;
         }
-        send(null); //TODO
+        String handshakeMsg = "\\hello " + clientName; // this prefix will be use to  start connection with server
+        send(handshakeMsg.getBytes());
         return true;
     }
 
@@ -59,10 +60,19 @@ public class Client {
         clientThr.start();
     }
 
-    private void send(byte[] newBytes) {
-		// TODO Auto-generated method stub
-		
-	}
+    public void send(final byte[] data) {
+        Thread send = new Thread("Send") {
+            public void run() {
+                DatagramPacket packet = new DatagramPacket(data, data.length, serverAddress, serverPort);
+                try {
+                    socket.send(packet);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        send.start();
+    }
     
     private void processData() {
     	// TODO 
