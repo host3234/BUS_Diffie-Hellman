@@ -1,4 +1,4 @@
-package client;
+package client;  
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -7,6 +7,7 @@ import java.net.*;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.Scanner;
+import org.json.*;
 
 public class Client {
 
@@ -22,14 +23,15 @@ public class Client {
     private int clientSecret;
     private Random randGenerator;
     private BigInteger secretValue;
+    private boolean encrypting = false;
 
-
-    public Client(String name, String address, int port) {
+    public Client(String name, String address, int port, boolean encrypting) {
         this.clientName = name;
         this.serverAddressString = address;
         this.serverPort = port;
+        this.encrypting = encrypting;
         randGenerator = new Random();
-        clientSecret = randGenerator.nextInt(50);
+        clientSecret = randGenerator.nextInt(100);
     }
 
     public boolean openConnection() {
@@ -44,12 +46,14 @@ public class Client {
             e.printStackTrace();
             return false;
         }
+        
+        
         String handshakeMsg = "\\hello " + clientName; // this prefix will be use to  start connection with server
     	// System.out.println("Test 1C");
         send(handshakeMsg.getBytes());
         return true;
     }
-
+    
     private void printMenu() {
         System.out.println("Witamy na serwerze");
         System.out.println("Aby wyjsc z serwera wpisz [exit] ");
@@ -65,8 +69,12 @@ public class Client {
                if (msg.startsWith("exit")) {
                     System.out.println("Aplikacja zakonczona.");
                     System.exit(0);
-                }
-               else {
+                }        
+               else
+               {
+            	   if (encrypting) {
+                       msg = CaesarEncrypt(msg, secretValue.intValue());
+                   }
                    byte endByte = Byte.parseByte("0");
                    String toSend = "\\message " + msg + " " + endByte;
                    try {
@@ -77,14 +85,11 @@ public class Client {
                    } catch (UnsupportedEncodingException e) {
                        e.printStackTrace();
                    }
-               }
-               }
-        }, "Client");
-        clientThr.start();
-    }
+               } } }, "Client");
+        clientThr.start(); }
    
     public void send(final byte[] data) {
-        Thread send = new Thread("Send") {
+        Thread send = new Thread("SendData") {
             public void run() {
                 DatagramPacket packet = new DatagramPacket(data, data.length, serverAddress, serverPort);
                 try {
@@ -92,11 +97,9 @@ public class Client {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }
-        };
+            }};
         send.start();
     }
-    
     
     private void runReceiver() {
 
@@ -113,6 +116,9 @@ public class Client {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+                 catch (NullPointerException e){
+                	 System.out.println("B³¹d");
+                 }
                 processData(packet);
             }
         }, "Receive");
@@ -120,41 +126,64 @@ public class Client {
     }
 
     private void processData(DatagramPacket packet) {
-
-        String extraMsg = null; //extra message, using to exchange values of P,G and A,B
+   	
+        String extraInfo = null;
         try {
-        	extraMsg = new String(packet.getData(), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
+        	extraInfo = new String(packet.getData(), "UTF-8");
+        } 
+        catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
-        if (extraMsg.startsWith("\\wrong")){ //Client name is already in use, pick another one
-            System.out.println("Taki Klient jest ju¿ na serwerze! Wybierz inn¹ nazwê.");
-            System.exit(0);
-        }
-        else if (extraMsg.startsWith("\\keStep1")) // KeyExchange - step 1, using this prefix allows client to receive values P & G
-        {
-            System.out.println("Polaczono z serwerem! Jesteœ zalogowany jako " + clientName + ".");
+        if (extraInfo.startsWith("\\keStep1")) {
+            System.out.println("Polaczono z serwerem! Zalogowano jako " + clientName + ".");
             try {
                 socket.setSoTimeout(1000000);
             } catch (SocketException e) {
                 e.printStackTrace();
             }
             printMenu();
-            String[] splittedMessage = extraMsg.split(" ");
+            String[] splittedMessage = extraInfo.split(" ");
             numP = new BigInteger(splittedMessage[1].trim());
             numG = new BigInteger(splittedMessage[2].trim());
-            BigInteger A = numG.pow(clientSecret).mod(numP); //calculate the A value and send it to server in response
-            String toSend = "\\keStep2 " + A; // KeyExchange- step 2. Client sends value of A, using special prefix
+            BigInteger A = numG.pow(clientSecret).mod(numP);
+            int checkEncrypt = encrypting ? 1 : 0;
+            String toSend = "\\keStep2 " + A + " " + checkEncrypt ;
             send(toSend.getBytes());
-        } 
-        else if (extraInfo.startsWith("\\keStep3")) // KeyExchange - step 3. Client gets message with value of B.
-        {
+        } else if (extraInfo.startsWith("\\wrong")) {
+            System.out.println("Ten nick juz istnieje na serwerze! Wybierz inny.");
+            System.exit(0);
+        } else if (extraInfo.startsWith("\\keStep3")) {
             BigInteger B = new BigInteger(extraInfo.split(" ")[1].trim());
             secretValue = B.pow(clientSecret).mod(numP);
-            System.out.println("Tajna wartoœæ to - " + secretValue);
+            
         } 
+        	else if (extraInfo.startsWith("\\message")) {
+            String source = extraInfo.split(" ", 3)[1];
+            String message = extraInfo.split(" ", 3)[2].trim();
+            if (encrypting) {
+                message = CaesarDecrypt(message, secretValue.intValue());
+            }
+            System.out.println(source + " : " + message);
+
+        }
     }
     
+    private String CaesarEncrypt(String text, int key) {
+        char[] chars = text.toCharArray();
+        for (int i = 0; i < chars.length; i++) 
+        {
+            chars[i] += key;
+        }
+        return String.valueOf(chars);
+    }
 
-
+    private String CaesarDecrypt(String text, int key) {
+        char[] chars = text.toCharArray();
+        for (int i = 0; i < chars.length; i++) 
+        {
+            chars[i] -= key;
+        }
+        return String.valueOf(chars);
+    }
 }
+    
