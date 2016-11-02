@@ -1,4 +1,4 @@
-package server;
+ package server;
 
 import java.net.InetAddress;
 
@@ -24,8 +24,8 @@ public class Client {
         this.port = port;
     }
 
-    public String toString() {
-        return "Uzytkownik polaczyl sie z" + address.toString() + ":" + port + ". Imie : " + name + ".";
+    public String printInfo() {
+        return "Uzytkownik polaczyl sie z serwerem " + address.toString() + ": " + port + ". Nazwa Klienta: " + name + ".";
     }
 
 }
