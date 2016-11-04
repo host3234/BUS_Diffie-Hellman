@@ -21,6 +21,8 @@ public class Server {
     private boolean running = false;
     private  boolean encrypting = false;
     private BigInteger secretValue;
+    private String mimeDecodedString;
+    private String mimeEncodedString;
     
     public Server(int port) {
         serverSecret = srandGenerator.nextInt(100);
@@ -133,23 +135,31 @@ public class Server {
             	}
             else if (extraMsg.startsWith("\\message"))
             	{
-        	extraMsg = extraMsg.trim();
-        	extraMsg = extraMsg.substring(0, extraMsg.length() - 1);
-            Client senderClient = getClient(packet.getAddress(), packet.getPort());
-            String[] splittedMessage = extraMsg.split(" ", 2);
-            String message = splittedMessage[1];
+            try {
+            	extraMsg = extraMsg.trim();
+            	extraMsg = extraMsg.substring(0, extraMsg.length() - 1);
+                String[] splittedMessage = extraMsg.split(" ", 2);
+
+                byte[] mimeDecoded = Base64.getMimeDecoder().decode(splittedMessage[1]);
+                mimeDecodedString = new String(mimeDecoded, "utf-8");
+            }
+            catch (UnsupportedEncodingException e){
+            	e.printStackTrace();
+            } 
+        	Client senderClient = getClient(packet.getAddress(), packet.getPort());
             if (encrypting) 
             {
-                message = CaesarDecrypt(message.trim(), clients.get(senderClient).intValue());             
+            	mimeDecodedString = CaesarDecrypt(mimeDecodedString.trim(), clients.get(senderClient).intValue());             
             }
-            System.out.println(senderClient.getName() + ": " +message);
-            sendMessage(senderClient.getName(), message);
+            System.out.println(senderClient.getName() + ": " +mimeDecodedString);
+            sendMessage(senderClient.getName(), mimeDecodedString);
             Scanner scan = new Scanner(System.in);
             		String msg = scan.nextLine();
             if (msg.startsWith("exit")) {
                  System.out.println("Aplikacja zakończona.");
                  System.exit(0);
-            	}
+            	}    
+            
             sendMessage("Server: ", msg);            
             	}
     }

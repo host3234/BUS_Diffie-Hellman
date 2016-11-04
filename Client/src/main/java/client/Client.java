@@ -5,6 +5,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.*;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Random;
 import java.util.Scanner;
 import org.json.*;
@@ -24,6 +25,8 @@ public class Client {
     private Random randGenerator;
     private BigInteger secretValue;
     private boolean encrypting = false;
+    private String mimeEncodedString;
+    
 
     public Client(String name, String address, int port, boolean encrypting) {
         this.clientName = name;
@@ -71,12 +74,22 @@ public class Client {
                     System.exit(0);
                 }        
                else
-               {
-            	   if (encrypting) {
-                       msg = CaesarEncrypt(msg, secretValue.intValue());
-                   }
+               {         	             	   
+            	   try {
+                 //  String base64encodedString = Base64.getMimeEncoder().encodeToString(msg.getBytes("utf-8"));
+            		   if (encrypting) {
+                		   msg = CaesarEncrypt(msg, secretValue.intValue());
+                       }
+            		   byte[] mimeBytes = msg.getBytes("utf-8");
+                       mimeEncodedString = Base64.getMimeEncoder().encodeToString(mimeBytes);              	   
+            	//   msg = base64encodedString;
+            	   }
+
+            	   catch (UnsupportedEncodingException e) {
+            		   e.printStackTrace();
+            	   }
                    byte endByte = Byte.parseByte("0");
-                   String toSend = "\\message " + msg + " " + endByte;
+                   String toSend = "\\message " + mimeEncodedString + " " + endByte;
                    try {
                        byte[] bytes = toSend.getBytes("UTF-8");
                        byte[] newBytes = Arrays.copyOf(bytes, bytes.length + 1);
@@ -108,7 +121,7 @@ public class Client {
                 byte[] data = new byte[1024];
                 DatagramPacket packet = new DatagramPacket(data, data.length);
                 try {
-                    socket.receive(packet);
+                    socket.receive(packet);                    
                 } catch (SocketTimeoutException e) {
                     System.out.println("Nie nawiazano polaczenia z serwerem!!!");
                     socket.close();
@@ -117,7 +130,7 @@ public class Client {
                     e.printStackTrace();
                 }
                  catch (NullPointerException e){
-                	 System.out.println("B³¹d");
+                	 System.out.println("Błąd");
                  }
                 processData(packet);
             }
@@ -158,8 +171,10 @@ public class Client {
             
         } 
         	else if (extraInfo.startsWith("\\message")) {
+        		
             String source = extraInfo.split(" ", 3)[1];
             String message = extraInfo.split(" ", 3)[2].trim();
+            
             if (encrypting) {
                 message = CaesarDecrypt(message, secretValue.intValue());
             }
