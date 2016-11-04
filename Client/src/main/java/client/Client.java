@@ -117,7 +117,7 @@ public class Client {
                     e.printStackTrace();
                 }
                  catch (NullPointerException e){
-                	 System.out.println("B³¹d");
+                	 System.out.println("BÂ³Â¹d");
                  }
                 processData(packet);
             }
@@ -164,8 +164,8 @@ public class Client {
                 message = CaesarDecrypt(message, secretValue.intValue());
             }
             System.out.println(source + " : " + message);
-
-        }
+        }   
+         
     }
     
     private String CaesarEncrypt(String text, int key) {
@@ -186,4 +186,3 @@ public class Client {
         return String.valueOf(chars);
     }
 }
-    

@@ -1,4 +1,4 @@
- package client;
+package client;
  
  
 public class ClientMain {
@@ -13,14 +13,14 @@ public class ClientMain {
         enc = true;
     	}
     	else {
-    	System.out.println("Podano b³êdne parametry. Podaj prawidlowe parametry: [username] [ip_serwera] [port_serwera] (opcjonalnie) Szyfrowanie[wpisz enc]");  
+    	System.out.println("Podano bÅ‚Ä™dne parametry. Podaj prawidlowe parametry: [username] [ip_serwera] [port_serwera] (opcjonalnie) Szyfrowanie[wpisz enc]");  
         System.exit(0);
     }}    	
     else if (args.length == 3){
         System.out.println("Szyfrowanie : NIE");
         }
     else if (args.length <= 2){
-    	System.out.println("Brakuje wszystkich paraemtrów. Podaj prawidlowe parametry: [username] [ip_serwera] [port_serwera] (opcjonalnie) Szyfrowanie[wpisz enc]");    	 
+    	System.out.println("Brakuje wszystkich paraemtrÃ³w. Podaj prawidlowe parametry: [username] [ip_serwera] [port_serwera] (opcjonalnie) Szyfrowanie[wpisz enc]");    	 
     }
     Client client = new Client(args[0], args[1], Integer.parseInt(args[2]), enc);
     	if (!client.openConnection()) {
@@ -29,6 +29,4 @@ public class ClientMain {
             client.start();
         }
     }
-    }
-   
-
+}

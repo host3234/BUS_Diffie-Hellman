@@ -20,14 +20,15 @@ public class Server {
     private int serverSecret;
     private boolean running = false;
     private  boolean encrypting = false;
+    private BigInteger secretValue;
     
     public Server(int port) {
         serverSecret = srandGenerator.nextInt(100);
         numP = BigInteger.probablePrime(32, srandGenerator);
         numG = findPrimitive(numP.longValue());
 		
-        System.out.println("Wartoœc P - " + numP);
-        System.out.println("Wartoœc G - " + numG);
+        System.out.println("WartoÅ›Ä‡ P - " + numP);
+        System.out.println("WartoÅ›Ä‡ G - " + numG);
        
         try {
             socket = new DatagramSocket(port);
@@ -125,10 +126,10 @@ public class Server {
             	encrypting = true;}
             String response = "\\keStep3 " + B;
             send(response.getBytes(), senderClient.getAddress(), senderClient.getPort());
-            BigInteger secret = A.pow(serverSecret).mod(numP);
-            System.out.println("Wartoœæ sekretna dla " + senderClient.getName() + " to: " + secret);
+            secretValue = A.pow(serverSecret).mod(numP);
+            System.out.println("WartoÅ›Ä‡ sekretna dla " + senderClient.getName() + " to: " + secretValue);
 
-            clients.put(senderClient, secret);
+            clients.put(senderClient, secretValue);
             	}
             else if (extraMsg.startsWith("\\message"))
             	{
@@ -139,9 +140,17 @@ public class Server {
             String message = splittedMessage[1];
             if (encrypting) 
             {
-                message = CaesarDecrypt(message.trim(), clients.get(senderClient).intValue());
+                message = CaesarDecrypt(message.trim(), clients.get(senderClient).intValue());             
             }
+            System.out.println(senderClient.getName() + ": " +message);
             sendMessage(senderClient.getName(), message);
+            Scanner scan = new Scanner(System.in);
+            		String msg = scan.nextLine();
+            if (msg.startsWith("exit")) {
+                 System.out.println("Aplikacja zakoÅ„czona.");
+                 System.exit(0);
+            	}
+            sendMessage("Server: ", msg);            
             	}
     }
 
@@ -218,10 +227,5 @@ public class Server {
             newBytes[newBytes.length - 1] = new Byte("0");
             send(newBytes, cli.getAddress(), cli.getPort());
         }
-
-
     }
-
-
 }
-
