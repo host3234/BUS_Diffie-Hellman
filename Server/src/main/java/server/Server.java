@@ -24,6 +24,11 @@ public class Server {
     private String mimeDecodedString;
     private String mimeEncodedString;
     
+    
+    /**
+     * Instance of Server Class. Show the public value of P and G
+     */
+    
     public Server(int port) {
         serverSecret = srandGenerator.nextInt(100);
         numP = BigInteger.probablePrime(32, srandGenerator);
@@ -40,6 +45,11 @@ public class Server {
             return;
         }
     }
+    
+    
+    /**
+     Method to find G number. 
+     */
     
     private BigInteger findPrimitive(long valueP) {
         List<Long> results = new ArrayList<>();
@@ -69,6 +79,7 @@ public class Server {
         return BigInteger.valueOf((-1));
     }
 
+   
     public void start() {
         Thread mainThread = new Thread(() -> {
             running = true;
@@ -76,7 +87,9 @@ public class Server {
         }, "Main");
         mainThread.start();
     }
-
+    
+    
+   
     private void runReceiver() {
         Thread receiver = new Thread(() -> {
             while (running) {
@@ -93,12 +106,19 @@ public class Server {
         receiver.start();
     }
 
+    /**
+     * Method to process all data between Server and Client. 
+     * When Client tries to conenct with server he send a message[msg] with \hello prefix. 
+     * If Client name is already used, server send msg with \wrong prefix. And now Client has to pick another name.
+     * If everything is ok, Server create response with \keStep1 prefix and appends to the it value of P and G.
+     * After that Client send reply containing value of A with \keStep2 prefix.
+     * Server calculated the value of B and finally the secret value.
+     */
     private void processData(DatagramPacket packet) {
-            String extraMsg = null; //extra message, using to exchange values of P,G and A,B
-        	int encrypt;
+            String extraMsg = null; //extra message, using to process the incoming data
             try 
             {
-            	extraMsg = new String(packet.getData(), "UTF-8");
+            	extraMsg = new String(packet.getData(), "UTF-8"); //receive the data
             } 
             catch (UnsupportedEncodingException e) 
             {
@@ -121,19 +141,22 @@ public class Server {
             }             
             else if (extraMsg.startsWith("\\keStep2")) 
             	{     	
+           // keStep2 => KeyExchange - step 2. Data received from client.
             Client senderClient = getClient(packet.getAddress(), packet.getPort());
             BigInteger A = new BigInteger(extraMsg.split(" ")[1].trim());
             BigInteger B = numG.pow(serverSecret).mod(numP);  
             if (extraMsg.split(" ")[2].trim().equals("1")){
             	encrypting = true;}
             String response = "\\keStep3 " + B;
+            // keStep2 => KeyExchange - step 3. Prepare messasge with value of B. 
             send(response.getBytes(), senderClient.getAddress(), senderClient.getPort());
-            secretValue = A.pow(serverSecret).mod(numP);
-            System.out.println("Wartość sekretna dla " + senderClient.getName() + " to: " + secretValue);
+            secretValue = A.pow(serverSecret).mod(numP); 
+            //calculated the secret value, which will be used to encryption
+          //System.out.println("Secret value for " + senderClient.getName() + " is: " + secretValue);
 
-            clients.put(senderClient, secretValue);
+            clients.put(senderClient, secretValue); //ascription secret Value to the client
             	}
-            else if (extraMsg.startsWith("\\message"))
+            else if (extraMsg.startsWith("\\message"))//this prefix allows both sides to exchange messages
             	{
             try {
             	extraMsg = extraMsg.trim();
@@ -211,8 +234,7 @@ public class Server {
         }
         return String.valueOf(chars);
     }
-    
-    
+        
     private void sendMessage(String sender, String message) {
         String messageToSend;
         for (Client cli : clients.keySet()) {
@@ -224,7 +246,16 @@ public class Server {
             {
             	messageToSend = message;
             }
-            String ourMessage = "\\message " + sender + " " + messageToSend;
+            try
+            {
+            	byte[] mimeBytes = messageToSend.getBytes("utf-8");
+                mimeEncodedString = Base64.getMimeEncoder().encodeToString(mimeBytes);
+            } 
+            catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+
+            String ourMessage = "\\message " + sender + " " + mimeEncodedString;
             byte[] bytes = new byte[0];
             try
             {

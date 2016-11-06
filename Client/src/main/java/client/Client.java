@@ -26,7 +26,8 @@ public class Client {
     private BigInteger secretValue;
     private boolean encrypting = false;
     private String mimeEncodedString;
-    
+    private String mimeDecodedString;
+    private String ourMessage ="";
 
     public Client(String name, String address, int port, boolean encrypting) {
         this.clientName = name;
@@ -52,7 +53,6 @@ public class Client {
         
         
         String handshakeMsg = "\\hello " + clientName; // this prefix will be use to  start connection with server
-    	// System.out.println("Test 1C");
         send(handshakeMsg.getBytes());
         return true;
     }
@@ -76,13 +76,11 @@ public class Client {
                else
                {         	             	   
             	   try {
-                 //  String base64encodedString = Base64.getMimeEncoder().encodeToString(msg.getBytes("utf-8"));
             		   if (encrypting) {
                 		   msg = CaesarEncrypt(msg, secretValue.intValue());
                        }
             		   byte[] mimeBytes = msg.getBytes("utf-8");
                        mimeEncodedString = Base64.getMimeEncoder().encodeToString(mimeBytes);              	   
-            	//   msg = base64encodedString;
             	   }
 
             	   catch (UnsupportedEncodingException e) {
@@ -174,11 +172,20 @@ public class Client {
         		
             String source = extraInfo.split(" ", 3)[1];
             String message = extraInfo.split(" ", 3)[2].trim();
+            try {
+            	byte[] mimeDecodedString = Base64.getMimeDecoder().decode(message);
+            	ourMessage = new String(mimeDecodedString, "utf-8");
+                System.out.println("Base64 Encoded String (MIME) :" + ourMessage );
+                
+        	}
+            catch (UnsupportedEncodingException e){
+            	e.printStackTrace();
+            }
             
             if (encrypting) {
-                message = CaesarDecrypt(message, secretValue.intValue());
+            	ourMessage = CaesarDecrypt(echo, secretValue.intValue());
             }
-            System.out.println(source + " : " + message);
+            System.out.println(source + " : " + ourMessage);
         }   
          
     }
