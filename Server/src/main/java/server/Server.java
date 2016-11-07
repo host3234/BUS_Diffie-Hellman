@@ -1,6 +1,6 @@
 package server; 
 
-import java.io.IOException; 
+import java.io.IOException;  
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.DatagramPacket;
@@ -8,6 +8,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.security.SecureRandom;
+import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.json.*;
@@ -34,8 +35,8 @@ public class Server {
         numP = BigInteger.probablePrime(32, srandGenerator);
         numG = findPrimitive(numP.longValue());
 		
-        System.out.println("Wartość P - " + numP);
-        System.out.println("Wartość G - " + numG);
+        System.out.println("Wartosc P - " + numP);
+        System.out.println("Wartosc G - " + numG);
        
         try {
             socket = new DatagramSocket(port);
@@ -48,7 +49,7 @@ public class Server {
     
     
     /**
-     Method to find G number. 
+     Method to find primitive root modulo P
      */
     
     private BigInteger findPrimitive(long valueP) {
@@ -115,15 +116,16 @@ public class Server {
      * Server calculated the value of B and finally the secret value.
      */
     private void processData(DatagramPacket packet) {
+    	
             String extraMsg = null; //extra message, using to process the incoming data
             try 
             {
-            	extraMsg = new String(packet.getData(), "UTF-8"); //receive the data
+            	extraMsg = new String(packet.getData(), "UTF-8");
             } 
             catch (UnsupportedEncodingException e) 
             {
                 e.printStackTrace();
-            }     
+            }  
             if (extraMsg.startsWith("\\hello")) 
             {
                 String clientName = extraMsg.split(" ")[1].trim();
@@ -156,7 +158,7 @@ public class Server {
 
             clients.put(senderClient, secretValue); //ascription secret Value to the client
             	}
-            else if (extraMsg.startsWith("\\message"))//this prefix allows both sides to exchange messages
+            else if (extraMsg.startsWith("\\message"))//this prefix allows both sides to exchange messages. 
             	{
             try {
             	extraMsg = extraMsg.trim();
@@ -187,6 +189,7 @@ public class Server {
             	}
     }
 
+    
     private void send(final byte[] data, final InetAddress address, final int port) {
         Thread sender = new Thread(() -> {
             DatagramPacket packet = new DatagramPacket(data, data.length, address, port);
@@ -199,6 +202,9 @@ public class Server {
         sender.start();
     }
     
+    /*
+     * Method used to check if name for Client is still available
+     */
     private Client findClient(String name) {
         for (Client cli : clients.keySet())
         {
@@ -208,6 +214,7 @@ public class Server {
         return null;
     }
     
+    
     private Client getClient(InetAddress address, int port) {
         for (Client cli : clients.keySet()) 
         {
@@ -216,6 +223,7 @@ public class Server {
         }
         return null;
     }
+    
     
     private String CaesarEncrypt(String text, int key) {
         char[] chars = text.toCharArray();

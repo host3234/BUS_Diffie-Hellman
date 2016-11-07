@@ -1,6 +1,7 @@
 package client;  
 
 import java.io.IOException;
+
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.*;
@@ -29,6 +30,11 @@ public class Client {
     private String mimeDecodedString;
     private String ourMessage ="";
 
+    
+    /**
+     * Instance of Client Class. Secret random value for Client is generate immediately.
+     */
+    
     public Client(String name, String address, int port, boolean encrypting) {
         this.clientName = name;
         this.serverAddressString = address;
@@ -50,10 +56,9 @@ public class Client {
             e.printStackTrace();
             return false;
         }
-        
-        
         String handshakeMsg = "\\hello " + clientName; // this prefix will be use to  start connection with server
         send(handshakeMsg.getBytes());
+        
         return true;
     }
     
@@ -74,7 +79,7 @@ public class Client {
                     System.exit(0);
                 }        
                else
-               {         	             	   
+               {                	   
             	   try {
             		   if (encrypting) {
                 		   msg = CaesarEncrypt(msg, secretValue.intValue());
@@ -88,10 +93,10 @@ public class Client {
             	   }
                    byte endByte = Byte.parseByte("0");
                    String toSend = "\\message " + mimeEncodedString + " " + endByte;
-                   try {
+                   try {                	   
                        byte[] bytes = toSend.getBytes("UTF-8");
                        byte[] newBytes = Arrays.copyOf(bytes, bytes.length + 1);
-                       newBytes[newBytes.length - 1] = new Byte("0");
+                       newBytes[newBytes.length - 1] = new Byte("0");                      
                        send(newBytes);
                    } catch (UnsupportedEncodingException e) {
                        e.printStackTrace();
@@ -136,6 +141,15 @@ public class Client {
         receiver.start();
     }
 
+    /**
+     * Method to process all data between Client and Server. 
+     * When Client tries to conenct with server he send a message[msg] with \hello prefix. 
+     * If Client name is already used, server send msg with \wrong prefix. And now Client has to pick another name.
+     * If everything is ok, Server create response with \keStep1 prefix and appends to the it values of P and G.
+     * Client calculates the value of A and appends it to response, with /keStep2 prefix.
+	 * Message with /keStep3 prefix contains value of B. Now Client is ready to compute the secret value.
+     */
+    
     private void processData(DatagramPacket packet) {
    	
         String extraInfo = null;
@@ -165,25 +179,23 @@ public class Client {
             System.exit(0);
         } else if (extraInfo.startsWith("\\keStep3")) {
             BigInteger B = new BigInteger(extraInfo.split(" ")[1].trim());
-            secretValue = B.pow(clientSecret).mod(numP);
-            
+            secretValue = B.pow(clientSecret).mod(numP);           
         } 
         	else if (extraInfo.startsWith("\\message")) {
-        		
+ 		
             String source = extraInfo.split(" ", 3)[1];
             String message = extraInfo.split(" ", 3)[2].trim();
+    
             try {
             	byte[] mimeDecodedString = Base64.getMimeDecoder().decode(message);
             	ourMessage = new String(mimeDecodedString, "utf-8");
-                System.out.println("Base64 Encoded String (MIME) :" + ourMessage );
-                
         	}
             catch (UnsupportedEncodingException e){
             	e.printStackTrace();
             }
             
             if (encrypting) {
-            	ourMessage = CaesarDecrypt(echo, secretValue.intValue());
+            	ourMessage = CaesarDecrypt(ourMessage, secretValue.intValue());
             }
             System.out.println(source + " : " + ourMessage);
         }   
