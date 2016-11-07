@@ -26,11 +26,16 @@ sudo apt-get install openjdk-8-jdk
 ```
 
 ## Compile
-To compile the appliactions you don't need to have Gradle in your system.Just go to Server or Client directory and you will find there
+To compile the appliactions you don't even need to have Gradle in your system.Just go to Server or Client directory and you will find there
 ```
 gradlew.bat (for Windows)  or gradlew (for Linux)
 ```
-Run this file, using terminal. After that go ./build/libs, where you will find generated .jar file.
+Run this file, using terminal. After that you need to build the application so write
+```
+gradlew build
+```
+
+Now you can go to ./build/libs, where you will find generated .jar file.
 
 To run Server.jar on  e.g. 8080 port,  write in your terminal
 ```
