@@ -1,6 +1,6 @@
 package client;  
 
-import java.io.IOException;
+import java.io.IOException; 
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
@@ -10,6 +10,7 @@ import java.util.Base64;
 import java.util.Random;
 import java.util.Scanner;
 import org.json.*;
+import com.google.gson.Gson;
 
 public class Client {
 
@@ -56,9 +57,16 @@ public class Client {
             e.printStackTrace();
             return false;
         }
-        String handshakeMsg = "\\hello " + clientName; // this prefix will be use to  start connection with server
-        send(handshakeMsg.getBytes());
         
+        
+        
+        String handshakeMsg = "\\hello " + clientName; // this prefix will be use to  start connection with server
+      //  JSONObject obj = new JSONObject();
+      //  obj.put("message", handshakeMsg);
+       
+        send(handshakeMsg.getBytes());
+       // send (obj.toString().getBytes());    
+         
         return true;
     }
     
@@ -202,7 +210,7 @@ public class Client {
          
     }
     
-    private String CaesarEncrypt(String text, int key) {
+    String CaesarEncrypt(String text, int key) {
         char[] chars = text.toCharArray();
         for (int i = 0; i < chars.length; i++) 
         {
@@ -211,7 +219,7 @@ public class Client {
         return String.valueOf(chars);
     }
 
-    private String CaesarDecrypt(String text, int key) {
+    String CaesarDecrypt(String text, int key) {
         char[] chars = text.toCharArray();
         for (int i = 0; i < chars.length; i++) 
         {

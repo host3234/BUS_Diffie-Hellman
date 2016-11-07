@@ -1,6 +1,6 @@
 package server; 
 
-import java.io.IOException;  
+import java.io.IOException;   
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.DatagramPacket;
@@ -11,7 +11,13 @@ import java.security.SecureRandom;
 import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import javax.swing.plaf.synth.SynthSpinnerUI;
+
 import org.json.*;
+import com.google.gson.*;
+
+
 
 public class Server {
     SecureRandom srandGenerator = new SecureRandom();
@@ -37,7 +43,7 @@ public class Server {
 		
         System.out.println("Wartosc P - " + numP);
         System.out.println("Wartosc G - " + numG);
-       
+        
         try {
             socket = new DatagramSocket(port);
             System.out.println("Serwer uruchomiony na porcie : " + port + ".");
@@ -115,17 +121,29 @@ public class Server {
      * After that Client send reply containing value of A with \keStep2 prefix.
      * Server calculated the value of B and finally the secret value.
      */
+    
+   /* private String convertTojson(String str , String key){
+    	JSONObject jObject = new JSONObject(str.trim());
+    	// System.out.println(jObject.getString(key));
+    	return jObject.getString(key);}
+    */
+    
     private void processData(DatagramPacket packet) {
     	
             String extraMsg = null; //extra message, using to process the incoming data
+          //  JSONObject jsonObj = null;
+
             try 
             {
-            	extraMsg = new String(packet.getData(), "UTF-8");
+              extraMsg = new String(packet.getData(), "UTF-8");  
+            //  jsonObj =  new JSONObject(extraMsg.toString().trim())
+
             } 
-            catch (UnsupportedEncodingException e) 
+            catch (UnsupportedEncodingException | JSONException e) 
             {
                 e.printStackTrace();
             }  
+            
             if (extraMsg.startsWith("\\hello")) 
             {
                 String clientName = extraMsg.split(" ")[1].trim();
@@ -225,7 +243,7 @@ public class Server {
     }
     
     
-    private String CaesarEncrypt(String text, int key) {
+    String CaesarEncrypt(String text, int key) {
         char[] chars = text.toCharArray();
         for (int i = 0; i < chars.length; i++) 
         {
@@ -234,7 +252,7 @@ public class Server {
         return String.valueOf(chars);
     }
 
-    private String CaesarDecrypt(String text, int key) {
+    String CaesarDecrypt(String text, int key) {
         char[] chars = text.toCharArray();
         for (int i = 0; i < chars.length; i++) 
         {
