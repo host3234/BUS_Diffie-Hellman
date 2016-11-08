@@ -58,12 +58,11 @@ public class Client {
             return false;
         }
         
-        
-        
-        String handshakeMsg = "\\hello " + clientName; // this prefix will be use to  start connection with server
+       
+        String handshakeMsg = "\\request " + clientName; // this prefix will be use to  start connection with server
       //  JSONObject obj = new JSONObject();
       //  obj.put("message", handshakeMsg);
-       
+      
         send(handshakeMsg.getBytes());
        // send (obj.toString().getBytes());    
          
@@ -84,6 +83,7 @@ public class Client {
                 String msg = scan.nextLine();
                if (msg.startsWith("exit")) {
                     System.out.println("Aplikacja zakonczona.");
+                    scan.close();
                     System.exit(0);
                 }        
                else
@@ -167,7 +167,8 @@ public class Client {
         catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
-        if (extraInfo.startsWith("\\keStep1")) {
+        if (extraInfo.startsWith("\\pgValues")) {
+            //KeyExchange - step 1. Prefix pgValues informs client that sending data contains values P & G
             System.out.println("Polaczono z serwerem! Zalogowano jako " + clientName + ".");
             try {
                 socket.setSoTimeout(1000000);
@@ -178,16 +179,21 @@ public class Client {
             String[] splittedMessage = extraInfo.split(" ");
             numP = new BigInteger(splittedMessage[1].trim());
             numG = new BigInteger(splittedMessage[2].trim());
-            BigInteger A = numG.pow(clientSecret).mod(numP);
-            int checkEncrypt = encrypting ? 1 : 0;
-            String toSend = "\\keStep2 " + A + " " + checkEncrypt ;
-            send(toSend.getBytes());
+            BigInteger A = numG.pow(clientSecret).mod(numP);       
+            String toSend = "\\aValue " + A;
+            //KeyExchange - step 2. Prepare data with value of A from client.
+            send(toSend.getBytes());  
+
         } else if (extraInfo.startsWith("\\wrong")) {
             System.out.println("Ten nick juz istnieje na serwerze! Wybierz inny.");
             System.exit(0);
-        } else if (extraInfo.startsWith("\\keStep3")) {
+        } else if (extraInfo.startsWith("\\bValue")) {
+            //KeyExchange - step 3. Client gets value of B. 
             BigInteger B = new BigInteger(extraInfo.split(" ")[1].trim());
-            secretValue = B.pow(clientSecret).mod(numP);           
+            secretValue = B.pow(clientSecret).mod(numP);
+            int checkEncrypt = encrypting ? 1 : 0;
+            String toSend = "\\encrypt " + checkEncrypt;
+            send(toSend.getBytes());
         } 
         	else if (extraInfo.startsWith("\\message")) {
  		

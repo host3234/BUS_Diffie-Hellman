@@ -8,7 +8,7 @@ public class ClientMain {
     	boolean enc =false;
 
     if (args.length == 4) {
-    	if (args[3].equals("szyfruj")) {
+    	if (args[3].equals("encrypt")) {
         System.out.println("Szyfrowanie : TAK");
         enc = true;
     	}

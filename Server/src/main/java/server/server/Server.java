@@ -1,6 +1,6 @@
 package server; 
 
-import java.io.IOException;   
+import java.io.IOException;    
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.DatagramPacket;
@@ -11,9 +11,7 @@ import java.security.SecureRandom;
 import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
-
 import javax.swing.plaf.synth.SynthSpinnerUI;
-
 import org.json.*;
 import com.google.gson.*;
 
@@ -52,7 +50,6 @@ public class Server {
             return;
         }
     }
-    
     
     /**
      Method to find primitive root modulo P
@@ -115,10 +112,10 @@ public class Server {
 
     /**
      * Method to process all data between Server and Client. 
-     * When Client tries to conenct with server he send a message[msg] with \hello prefix. 
+     * When Client tries to connect with server he send a message[msg] with \request prefix. 
      * If Client name is already used, server send msg with \wrong prefix. And now Client has to pick another name.
-     * If everything is ok, Server create response with \keStep1 prefix and appends to the it value of P and G.
-     * After that Client send reply containing value of A with \keStep2 prefix.
+     * If everything is ok, Server creates response with \pgVavlues prefix and appends to it values of P and G.
+     * After that Client send reply containing value of A with \aValue prefix.
      * Server calculated the value of B and finally the secret value.
      */
     
@@ -144,7 +141,7 @@ public class Server {
                 e.printStackTrace();
             }  
             
-            if (extraMsg.startsWith("\\hello")) 
+            if (extraMsg.startsWith("\\request")) 
             {
                 String clientName = extraMsg.split(" ")[1].trim();
                 Client newClient = new Client(clientName.trim(), packet.getAddress(), packet.getPort());
@@ -154,28 +151,30 @@ public class Server {
                 } else 
                 {
                     clients.put(newClient, null);
-                    String response = "\\keStep1 " + numP + " " + numG; 
-                    // keStep1 => KeyExchange - step 1. Using this prefix will allow client to receive values P & G
+                    String response = "\\pgValues " + numP + " " + numG; 
+                    //KeyExchange - step 1. Using prefix pgValues will allow client to receive values P & G
                     send(response.getBytes(), newClient.getAddress(), newClient.getPort());
                 }
             }             
-            else if (extraMsg.startsWith("\\keStep2")) 
+            else if (extraMsg.startsWith("\\aValue")) 
             	{     	
-           // keStep2 => KeyExchange - step 2. Data received from client.
+           //KeyExchange - step 2. Server receives value of A from client.
             Client senderClient = getClient(packet.getAddress(), packet.getPort());
             BigInteger A = new BigInteger(extraMsg.split(" ")[1].trim());
             BigInteger B = numG.pow(serverSecret).mod(numP);  
-            if (extraMsg.split(" ")[2].trim().equals("1")){
-            	encrypting = true;}
-            String response = "\\keStep3 " + B;
-            // keStep2 => KeyExchange - step 3. Prepare messasge with value of B. 
+            String response = "\\bValue " + B;
+            //KeyExchange - step 3. Prepare messasge with value of B. 
             send(response.getBytes(), senderClient.getAddress(), senderClient.getPort());
             secretValue = A.pow(serverSecret).mod(numP); 
-            //calculated the secret value, which will be used to encryption
-          //System.out.println("Secret value for " + senderClient.getName() + " is: " + secretValue);
+            //Server calculates the secret value
+            // System.out.println("Secret value for " + senderClient.getName() + " is: " + secretValue);
 
             clients.put(senderClient, secretValue); //ascription secret Value to the client
             	}
+            else if (extraMsg.startsWith("\\encrypt")){
+            	 if (extraMsg.split(" ")[1].trim().equals("1")){
+                 	encrypting = true;}
+            }
             else if (extraMsg.startsWith("\\message"))//this prefix allows both sides to exchange messages. 
             	{
             try {
@@ -200,6 +199,7 @@ public class Server {
             		String msg = scan.nextLine();
             if (msg.startsWith("exit")) {
                  System.out.println("Aplikacja zakończona.");
+                 scan.close();
                  System.exit(0);
             	}    
             
